@@ -30,3 +30,7 @@ Thumbs.db
 
 # Server uploads folder structure setup
 !server/uploads/
+
+# Prompt / internal planning files (do not publish)
+Smart_Inventory_Warehouse_Management_Master_Prompt.md
+client/README.md

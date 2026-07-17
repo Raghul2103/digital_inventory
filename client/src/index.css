@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-50: #f5f7ff;
+  --color-brand-100: #ebf0ff;
+  --color-brand-200: #d6e0ff;
+  --color-brand-300: #b3c7ff;
+  --color-brand-400: #85a4ff;
+  --color-brand-500: #5376ff;
+  --color-brand-600: #3350eb;
+  --color-brand-700: #253bc4;
+  --color-brand-800: #21329e;
+  --color-brand-900: #202c7e;
+  --color-brand-950: #13194b;
+  
+  --font-sans: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 font-sans antialiased;
+  }
+}
+
+/* Custom premium scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-800 rounded-full transition-colors;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-700;
+}
+
+/* Glassmorphism card utility */
+.glass-panel {
+  @apply bg-white/70 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/50 dark:border-slate-800/40;
+}

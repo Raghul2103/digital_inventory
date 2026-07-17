@@ -152,8 +152,22 @@ app.use(helmet({
   crossOriginResourcePolicy: false // Allows loading uploaded static assets
 }));
 
+// CORS allow-list: supports both local dev and production (comma-separated CLIENT_URLS)
+const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 const corsOptions = {
-  origin: config.clientUrl,
+  origin: (origin, callback) => {
+    // Allow server-to-server requests (no origin header) and whitelisted origins
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from: ${origin}`);
+      callback(new Error(`CORS policy: origin ${origin} is not allowed`));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

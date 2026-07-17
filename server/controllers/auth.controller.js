@@ -116,17 +116,21 @@ const login = async (req, res, next) => {
     await user.save();
 
     // 4. Set Http-only cookies
+    // In production (Vercel → Render cross-domain), sameSite must be 'none' + secure: true
+    // In local dev (same host), sameSite 'lax' works fine
+    const isProduction = config.env === 'production';
+
     const accessCookieOptions = {
       httpOnly: true,
-      secure: config.env === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000 // 1 day
     };
 
     const refreshCookieOptions = {
       httpOnly: true,
-      secure: config.env === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000 // 30 days vs 7 days
     };
 
@@ -202,11 +206,12 @@ const refreshToken = async (req, res, next) => {
     // 3. Issue new access token
     const newAccessToken = generateAccessToken(user);
 
-    // Refresh cookies
+    // Refresh cookies (production-aware sameSite)
+    const isProd = config.env === 'production';
     res.cookie('accessToken', newAccessToken, {
       httpOnly: true,
-      secure: config.env === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       maxAge: 24 * 60 * 60 * 1000
     });
 

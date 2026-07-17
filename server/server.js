@@ -147,12 +147,11 @@ connectDB().then(() => {
   seedDatabase();
 });
 
-// Security & Parsing Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: false // Allows loading uploaded static assets
-}));
+// ─── CORS ──────────────────────────────────────────────────────────────────
+// MUST be registered BEFORE helmet and all other middleware so that
+// preflight OPTIONS requests are answered before any other handler runs.
 
-// CORS allow-list: supports both local dev and production (comma-separated CLIENT_URLS)
+// Build an allow-list from env: comma-separated CLIENT_URLS or fallback CLIENT_URL
 const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
   .map(s => s.trim())
@@ -160,20 +159,37 @@ const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || 'ht
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow server-to-server requests (no origin header) and whitelisted origins
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Blocked request from: ${origin}`);
-      callback(new Error(`CORS policy: origin ${origin} is not allowed`));
-    }
+    // Allow server-to-server / Postman (no Origin header)
+    if (!origin) return callback(null, true);
+
+    // Exact match in allow-list
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Allow ALL *.vercel.app preview URLs automatically (safe for SaaS)
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+
+    // Allow localhost on any port for local development
+    if (/^http:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
+
+    console.warn(`[CORS] Blocked request from origin: ${origin}`);
+    callback(new Error(`CORS policy: origin "${origin}" is not allowed`));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin'],
+  exposedHeaders: ['Content-Length', 'Content-Type']
 };
-app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS for ALL routes — must be FIRST
 app.options('*', cors(corsOptions));
+
+// Apply CORS to all subsequent requests
+app.use(cors(corsOptions));
+
+// Security & Parsing Middleware (after CORS so OPTIONS aren't blocked)
+app.use(helmet({
+  crossOriginResourcePolicy: false // Allows loading uploaded static assets
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
